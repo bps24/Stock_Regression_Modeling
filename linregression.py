@@ -7,6 +7,7 @@ from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt 
 from matplotlib import style
 
+#set parameters for the model
 style.use('ggplot')
 shiftlen = 0.005
 outlierlabel = -99999
@@ -14,7 +15,10 @@ tsize = 0.2
 sec_per_day = 86400
 tick = 'GOOGL'
 
+#Gathers ticker data
 df = quandl.get(('WIKI/' + tick))
+
+#Cteate data frame object
 df = df[['Adj. Open', 'Adj. High', 'Adj. Low', 'Adj. Close', 'Adj. Volume']]
 df['HL_PCT'] = (df['Adj. High'] - df['Adj. Low'])*100/ df['Adj. Low']
 df['PCT_change'] = (df['Adj. Close'] - df['Adj. Open'])*100/ df['Adj. Open']
@@ -26,25 +30,27 @@ forecast_out = int(math.ceil(shiftlen*len(df)))
 
 df['label'] = df[forecast].shift(-forecast_out)
 
-
+#Arranges x data
 X = np.array(df.drop(['label'],1))
 X = preprocessing.scale(X)
 X = X[:-forecast_out]
 X_recent = X[-forecast_out:]
 
+#Arranges y data
 df.dropna(inplace=True)
 y = np.array(df['label'])
 y = np.array(df['label'])
 
+#Trains data
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=tsize)
 
+#Builds Lin Reg Model
 clf = LinearRegression()
 clf.fit(X_train, y_train)
 accuracy = clf.score(X_test, y_test)
 
-
+#Prints Forecast Data
 forecast_set = clf.predict(X_recent)
-
 print(forecast_set, accuracy, forecast_out)
 
 df['forecast'] = np.nan
@@ -58,6 +64,7 @@ for i in forecast_set:
     next_unix += sec_per_day
     df.loc[next_date] = [np.nan for _ in range(len(df.columns)-1)] + [i]
 
+#Plots Data Plus Forecast
 df['Adj. Close'].plot()
 df['forecast'].plot()
 plt.legend(loc=4)
